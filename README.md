@@ -1,69 +1,86 @@
 # Davangere Park and Garden Management
 
-A Flask and SQLite demo for exploring parks, reporting issues, and managing maintenance.
-It is **not safe for a public production launch** in its current form: the API has no
-authentication, so anyone who can reach a deployed server can read and change its data,
-including submitted contact details and photos. The admin password is also exposed through
-the API. Do not use real personal data or deploy this demo publicly until server-side
-authentication and authorization, and appropriate data protection, have been implemented.
+A bilingual (English/Kannada) Flask website for exploring Davangere parks, reporting
+maintenance issues, suggesting improvements, and following repair progress. The site
+uses a shared SQLite database; it is a Flask application and cannot be hosted as a
+static GitHub Pages site.
 
-## What's in this folder
+## Run locally
 
-- `app.py` — the Flask server and its API routes.
-- `index.html` — the same site you already reviewed (same look, same features, same
-  bilingual support), with one change: every place it used to read/write only to the
-  browser's local storage now also syncs with the server below.
-- `requirements.txt` — the two Python packages needed to run it.
-- `data.db` — the local SQLite database, created automatically when the server starts.
-  It is intentionally excluded from Git so local records are not published.
-
-## How the sync works (plain-English version)
-
-- Every "save" action (submitting a complaint, adding a technician, assigning someone,
-  marking something resolved, etc.) still updates the browser's local copy instantly
-  *and* sends the update to the server in the background.
-- Opening the Municipality or Technician dashboard pulls the latest data from the server
-  right away, and then every 5 seconds while that dashboard stays open — so a complaint a
-  citizen just submitted on their own phone shows up on the municipality's screen on its
-  own, without anyone needing to refresh.
-- If the server can't be reached for a moment, the page keeps working off its last-known
-  local copy and a small indicator in the header shows "🔴 Offline" until it reconnects.
-
-## Running it locally first (to prove it works before you deploy)
-
-```bash
-cd park_tracker_server
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python3 app.py
+$env:ADMIN_PASSWORD = "replace-with-a-private-password-of-at-least-12-characters"
+$env:SECRET_KEY = python -c "import secrets; print(secrets.token_hex(32))"
+python app.py
 ```
 
-Then open `http://127.0.0.1:5000/` in a browser. Try it in two different browsers (or one
-normal window + one incognito window) at the same time — submit a complaint as a citizen in
-one, and watch it appear in the Municipality dashboard in the other.
+Open <http://127.0.0.1:5000>. The first run creates `data.db` and stores a hash of
+`ADMIN_PASSWORD`; the password itself is never returned by an API. Change it later
+from the municipality dashboard. Add technician accounts there too; technician
+passwords must be at least 12 characters.
 
-## Deploying it for real (step by step)
+If an existing database already has an administrator password hash, changing
+`ADMIN_PASSWORD` does not overwrite it. Use the dashboard to change that password.
 
-See the deployment guide sent alongside this project. In short: push this folder to a free
-GitHub repo, create a free Web Service on Render (or Railway/PythonAnywhere) pointed at it,
-set the start command to `gunicorn app:app`, and you'll get a real public URL anyone can
-visit from any device.
+## Deploying the Flask app
 
-## Honest limitations of this version (so nothing surprises you later)
+Use a Python web host that supports persistent disks. Set the start command to:
 
-- **Data model is simple by design.** Instead of a separate SQL table per field
-  (citizens, complaints, technicians as normalized tables), each collection (complaints,
-  technicians, suggestions, extra parks) is stored as one JSON blob per row in a single
-  `store` table. This keeps the browser-side code nearly identical to the version you
-  already tested, and it is a real, working, shared SQLite database — but if your course
-  specifically wants to see normalized relational tables with foreign keys, that's an
-  upgrade from here, not what's currently in `app.py`.
-- **Login is simple, not bank-grade.** The admin password and technician credentials are
-  checked in the browser against data fetched from the server, the same way the original
-  preview worked — there's no server-side session/token security. Fine for a course
-  project demo; not something to reuse for a system handling sensitive data.
-- **Photos are stored as base64 text inside the database**, not as separate image files.
-  Simple and fully working at this scale; a larger real deployment would normally store
-  images as files (or in cloud storage) instead.
-- **Free hosting tiers sleep when idle.** On a free Render/Railway plan, the server may
-  take ~30-50 seconds to wake up on the very first visit after a period of inactivity.
-  That's a hosting-plan characteristic, not a bug in the app.
+```sh
+gunicorn app:app
+```
+
+Configure these environment variables in the hosting provider's secret settings,
+not in Git:
+
+| Variable | Purpose |
+| --- | --- |
+| `SECRET_KEY` | A long, random, stable Flask session-signing key. Keep it unchanged between restarts. |
+| `ADMIN_PASSWORD` | Initial municipality password, at least 12 characters. Used only to initialize a new database. |
+| `DATABASE_PATH` | Path to `data.db` on the provider's persistent disk, for example `/var/data/data.db`. |
+| `COOKIE_SECURE` | Set to `true` when the site is served over HTTPS. |
+| `APP_ENV` | Set to `production`; the app then requires `SECRET_KEY` and enables secure cookies by default. |
+
+Enable HTTPS before inviting users. The host must retain the database disk across
+deploys/restarts, and you should schedule and test database backups. Do not put
+`data.db`, passwords, session keys, or real citizen records in the public repository.
+For a one-off SQLite backup, Python's online backup API can copy a live database:
+
+```python
+import sqlite3
+
+with sqlite3.connect("data.db") as source, sqlite3.connect("data-backup.db") as backup:
+    source.backup(backup)
+```
+
+## Privacy and safeguards
+
+- Municipality and technician dashboards require server-side sessions. Technician
+  passwords are hashed; dashboard write requests require a CSRF token.
+- Citizens can submit reports and suggestions without an account. Report tracking
+  requires both the report number and the submitting phone number.
+- Names and phone numbers are not stored in browser local storage and are omitted
+  from technician responses and the public repair gallery. Only authorized staff can
+  retrieve the full complaint list.
+- Public report and suggestion endpoints validate input and apply per-IP rate limits.
+  Report photos are resized to JPEG in the browser and size-limited on the server.
+- Report photos stay private by default. The submitter must opt in before the before
+  and after repair photos can appear in the public gallery.
+- The public gallery shows photos only for resolved repairs whose submitter opted in.
+  Follow the municipality's data-retention and
+  privacy requirements before using this with real citizen information.
+
+These safeguards are an improvement, not a substitute for a production security and
+privacy review. In particular, review access policies, backups, data retention,
+account recovery, hosting proxy/rate-limit behavior, and applicable local privacy law.
+Only publish verified park details; confirm facilities, hours, and accessibility with
+the relevant authority before adding them to park listings. Have Kannada copy reviewed
+by a fluent speaker before a public launch.
+
+## Tests
+
+```sh
+python -m unittest discover -s tests -v
+```
