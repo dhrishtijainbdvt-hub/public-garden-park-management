@@ -78,6 +78,8 @@ h1,h2,h3 { font-family:"Fraunces",serif; font-weight:600; margin:0 0 .4em; color
 .form-section.narrow { max-width:520px; }
 .card-form { background:var(--paper); border:1px solid var(--border); border-radius:12px; padding:26px; display:flex; flex-direction:column; gap:16px; margin-top:18px; }
 .card-form label { display:flex; flex-direction:column; gap:6px; font-weight:500; font-size:.9rem; }
+.card-form .checkbox-row { flex-direction:row; align-items:flex-start; }
+.card-form .checkbox-row input { width:auto; margin-top:3px; }
 .card-form input, .card-form select, .card-form textarea { padding:10px 12px; border:1px solid var(--border); border-radius:6px; font-family:inherit; font-size:.94rem; background:#fbfcf9; }
 .card-form input:focus, .card-form select:focus, .card-form textarea:focus { outline:2px solid var(--gold); outline-offset:1px; }
 .field-hint { font-size:.78rem; color:#5a6b5e; font-weight:400; }
@@ -389,11 +391,11 @@ h1,h2,h3 { font-family:"Fraunces",serif; font-weight:600; margin:0 0 .4em; color
       <h1 data-t="form_title">Report a Maintenance Issue</h1>
       <form class="card-form" id="reportForm" onsubmit="submitComplaint(event)">
         <label><span data-t="your_name">Your Name</span> <span class="required-star">*</span>
-          <input type="text" id="f_name" required>
+          <input type="text" id="f_name" maxlength="100" required autocomplete="name">
         </label>
         <label><span data-t="contact_number">Phone Number</span> <span class="required-star">*</span>
           <span class="field-hint" data-t="phone_hint">10-digit mobile number, used only to update you on this complaint</span>
-          <input type="tel" id="f_contact" pattern="[0-9]{10}" maxlength="10" required>
+          <input type="tel" id="f_contact" pattern="\+?[0-9]{10,15}" maxlength="16" required inputmode="tel" autocomplete="tel">
         </label>
         <label><span data-t="park_name">Park / Garden</span> <span class="required-star">*</span>
           <select id="f_park" required onchange="updateParkPreview()"></select>
@@ -414,7 +416,12 @@ h1,h2,h3 { font-family:"Fraunces",serif; font-weight:600; margin:0 0 .4em; color
           </select>
         </label>
         <label><span data-t="description">Describe the issue</span> *
-          <textarea id="f_desc" rows="4" required></textarea>
+          <textarea id="f_desc" rows="4" maxlength="1200" required></textarea>
+        </label>
+        <p class="field-hint" data-t="privacy_note">Your contact details and issue photos are private to authorized staff. You can opt in below to share repair photos in the public gallery.</p>
+        <label class="checkbox-row">
+          <input type="checkbox" id="f_photo_consent">
+          <span data-t="photo_consent">Optional: allow before and after repair photos to appear in the public gallery.</span>
         </label>
         <label><span data-t="upload_photo_required">Photo of the issue</span> <span class="required-star">*</span>
           <span class="field-hint" data-t="photo_required_hint">Required — helps the technician confirm the problem before visiting</span>
@@ -422,8 +429,8 @@ h1,h2,h3 { font-family:"Fraunces",serif; font-weight:600; margin:0 0 .4em; color
             <button type="button" class="btn btn-outline small" onclick="openCameraOrFile()">📷 <span data-t="take_photo">Take Photo</span></button>
             <button type="button" class="btn btn-outline small" onclick="document.getElementById('f_photo_gallery').click()">🖼️ <span data-t="choose_gallery">Choose from Gallery</span></button>
           </div>
-          <input type="file" id="f_photo_camera" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelect(this)">
-          <input type="file" id="f_photo_gallery" accept="image/*" style="display:none;" onchange="handlePhotoSelect(this)">
+          <input type="file" id="f_photo_camera" accept="image/jpeg,image/png,image/webp" capture="environment" style="display:none;" onchange="handlePhotoSelect(this)">
+          <input type="file" id="f_photo_gallery" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="handlePhotoSelect(this)">
           <img id="f_photo_preview" class="photo-preview">
         </label>
         <button type="submit" class="btn btn-primary" data-t="submit">Submit Complaint</button>
@@ -453,10 +460,7 @@ h1,h2,h3 { font-family:"Fraunces",serif; font-weight:600; margin:0 0 .4em; color
             </select>
           </label>
           <label><span data-t="suggestion_text">Your suggestion</span> <span class="required-star">*</span>
-            <textarea id="s_text" rows="5" required data-t-placeholder="suggestion_text_hint" placeholder="Describe your idea and how it would help visitors"></textarea>
-          </label>
-          <label><span data-t="your_name_optional">Your Name (optional)</span>
-            <input type="text" id="s_name">
+            <textarea id="s_text" rows="5" maxlength="1000" required data-t-placeholder="suggestion_text_hint" placeholder="Describe your idea and how it would help visitors"></textarea>
           </label>
           <button type="submit" class="btn btn-primary" data-t="submit_suggestion">Submit Suggestion</button>
         </form>
@@ -485,6 +489,7 @@ h1,h2,h3 { font-family:"Fraunces",serif; font-weight:600; margin:0 0 .4em; color
           <strong id="newComplaintId">#1</strong>
         </div>
         <p class="hint" data-t="track_hint">Save this ID to check your complaint's status anytime.</p>
+        <a class="btn btn-primary" onclick="showView('track')" data-t="check_status">Track report</a>
         <a class="btn btn-outline" onclick="showView('home')" data-t="nav_home_short">Home</a>
       </div>
     </section>
@@ -499,7 +504,7 @@ h1,h2,h3 { font-family:"Fraunces",serif; font-weight:600; margin:0 0 .4em; color
           <input type="text" id="trackId" required>
         </label>
         <label><span data-t="your_phone">Your Phone Number</span>
-          <input type="tel" id="trackPhone" pattern="[0-9]{10}" maxlength="10" required>
+          <input type="tel" id="trackPhone" pattern="\+?[0-9]{10,15}" maxlength="16" required inputmode="tel" autocomplete="tel">
           <span class="field-hint" data-t="phone_must_match">Phone number must match the one used to submit the complaint.</span>
         </label>
         <button type="submit" class="btn btn-primary" data-t="check_status">Check Status</button>
@@ -634,7 +639,7 @@ h1,h2,h3 { font-family:"Fraunces",serif; font-weight:600; margin:0 0 .4em; color
           <input type="tel" id="newTechPhone" data-t-placeholder="contact_number" placeholder="Phone number">
           <input type="text" id="newTechUsername" data-t-placeholder="username" placeholder="Username">
           <div class="password-field" style="flex:1; min-width:160px;">
-            <input type="password" id="newTechPassword" data-t-placeholder="password" placeholder="Password" style="width:100%;">
+            <input type="password" id="newTechPassword" data-t-placeholder="password" placeholder="Password" minlength="12" autocomplete="new-password" style="width:100%;">
             <button type="button" class="password-toggle" aria-label="Show password" onclick="togglePasswordVisibility('newTechPassword', this)">👁️</button>
           </div>
           <select id="newTechPark">
@@ -642,13 +647,15 @@ h1,h2,h3 { font-family:"Fraunces",serif; font-weight:600; margin:0 0 .4em; color
           </select>
           <button type="button" class="btn btn-primary" onclick="addTechnician()" data-t="add_btn">Add</button>
         </form>
+        <p class="hint" data-t="password_length_hint">Use at least 12 characters for passwords.</p>
         <div class="tech-card-list" id="techList"></div>
 
         <h2 style="margin-top:32px;" data-t="change_admin_password_title">Change Municipality Password</h2>
+        <p class="hint" data-t="password_length_hint">Use at least 12 characters for passwords.</p>
         <p class="hint" id="pwUpdateMsg" style="display:none;"></p>
         <div class="inline-form">
           <div class="password-field" style="flex:1; min-width:160px;">
-            <input type="password" id="newAdminPassword" data-t-placeholder="new_password_ph" placeholder="New password" style="width:100%;">
+            <input type="password" id="newAdminPassword" data-t-placeholder="new_password_ph" placeholder="New password" minlength="12" autocomplete="new-password" style="width:100%;">
             <button type="button" class="password-toggle" aria-label="Show password" onclick="togglePasswordVisibility('newAdminPassword', this)">👁️</button>
           </div>
           <button type="button" class="btn btn-primary" onclick="updateAdminPassword()" data-t="update_password_btn">Update Password</button>
@@ -779,7 +786,9 @@ const T = {
     role_tech:"Technician", role_tech_desc:"Fix issues, upload proof",
     role_admin:"Municipality", role_admin_desc:"Assign staff, oversee all parks",
     your_name:"Your Name", contact_number:"Phone Number", park_name:"Park / Garden",
-    phone_hint:"10-digit mobile number, used only to update you on this complaint",
+    phone_hint:"Your phone number is used only to verify and track this report.",
+    photo_consent:"Optional: allow before and after repair photos to appear in the public gallery.",
+    password_length_hint:"Use at least 12 characters for passwords.",
     issue_type:"Issue Type", priority:"Priority", description:"Describe the issue",
     upload_photo_required:"Photo of the issue", photo_required_hint:"Required — helps the technician confirm the problem before visiting",
     take_photo:"Take Photo", choose_gallery:"Choose from Gallery",
@@ -817,7 +826,7 @@ const T = {
     filter_all_issue:"All — Report Issue", filter_all_priority:"All priority", filter_all_parks:"All parks",
     filter_all_status:"All statuses", filter_all_technicians:"All technicians", overdue_only:"Overdue only",
     print_pdf:"Print / Save as PDF",
-    privacy_note:"Your name and phone number are collected only to process this complaint and are not shown publicly. This is a student community project, not an official municipal service unless formally adopted.",
+    privacy_note:"Your contact details and issue photo are private to authorized staff. You can opt in below to share before/after repair photos in the public gallery. This is a student community project, not an official municipal service unless formally adopted.",
     demo_data_badge:"Demo Data",
     primary_park:"Home Park (default assignment)", no_primary_park:"— No home park —",
     hist_submitted:"Complaint submitted", hist_assigned:"Assigned to technician", hist_progress:"Technician started work",
@@ -881,7 +890,9 @@ const T = {
     role_tech:"ತಂತ್ರಜ್ಞ", role_tech_desc:"ಸಮಸ್ಯೆ ಸರಿಪಡಿಸಿ, ಪುರಾವೆ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ",
     role_admin:"ಪುರಸಭೆ", role_admin_desc:"ಸಿಬ್ಬಂದಿ ನಿಯೋಜಿಸಿ, ಎಲ್ಲಾ ಉದ್ಯಾನಗಳ ಮೇಲ್ವಿಚಾರಣೆ",
     your_name:"ನಿಮ್ಮ ಹೆಸರು", contact_number:"ಫೋನ್ ಸಂಖ್ಯೆ", park_name:"ಉದ್ಯಾನದ ಹೆಸರು",
-    phone_hint:"10-ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ, ಈ ದೂರಿನ ಬಗ್ಗೆ ಮಾತ್ರ ಬಳಸಲಾಗುತ್ತದೆ",
+    phone_hint:"ಈ ವರದಿಯನ್ನು ಪರಿಶೀಲಿಸಲು ಮತ್ತು ಅದರ ಸ್ಥಿತಿಯನ್ನು ನೋಡಲು ನಿಮ್ಮ ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ಮಾತ್ರ ಬಳಸಲಾಗುತ್ತದೆ.",
+    photo_consent:"ಐಚ್ಛಿಕ: ದುರಸ್ತಿಗೆ ಮೊದಲು ಮತ್ತು ನಂತರದ ಫೋಟೋಗಳನ್ನು ಸಾರ್ವಜನಿಕ ಗ್ಯಾಲರಿಯಲ್ಲಿ ತೋರಿಸಲು ಅನುಮತಿಸಿ.",
+    password_length_hint:"ಪಾಸ್‌ವರ್ಡ್ ಕನಿಷ್ಠ 12 ಅಕ್ಷರಗಳಿರಲಿ.",
     issue_type:"ಸಮಸ್ಯೆಯ ಪ್ರಕಾರ", priority:"ಆದ್ಯತೆ", description:"ಸಮಸ್ಯೆಯನ್ನು ವಿವರಿಸಿ",
     upload_photo_required:"ಸಮಸ್ಯೆಯ ಫೋಟೋ", photo_required_hint:"ಕಡ್ಡಾಯ — ತಂತ್ರಜ್ಞರಿಗೆ ಸಮಸ್ಯೆ ಖಚಿತಪಡಿಸಲು ಸಹಾಯ ಮಾಡುತ್ತದೆ",
     take_photo:"ಫೋಟೋ ತೆಗೆಯಿರಿ", choose_gallery:"ಗ್ಯಾಲರಿಯಿಂದ ಆಯ್ಕೆಮಾಡಿ",
@@ -919,7 +930,7 @@ const T = {
     filter_all_issue:"ಎಲ್ಲಾ — ದೂರಿನ ಪ್ರಕಾರ", filter_all_priority:"ಎಲ್ಲಾ ಆದ್ಯತೆ", filter_all_parks:"ಎಲ್ಲಾ ಉದ್ಯಾನಗಳು",
     filter_all_status:"ಎಲ್ಲಾ ಸ್ಥಿತಿಗಳು", filter_all_technicians:"ಎಲ್ಲಾ ತಂತ್ರಜ್ಞರು", overdue_only:"ವಿಳಂಬ ಮಾತ್ರ",
     print_pdf:"ಮುದ್ರಿಸಿ / PDF ಆಗಿ ಉಳಿಸಿ",
-    privacy_note:"ನಿಮ್ಮ ಹೆಸರು ಮತ್ತು ಫೋನ್ ಸಂಖ್ಯೆಯನ್ನು ಈ ದೂರನ್ನು ಪ್ರಕ್ರಿಯೆಗೊಳಿಸಲು ಮಾತ್ರ ಸಂಗ್ರಹಿಸಲಾಗುತ್ತದೆ ಮತ್ತು ಸಾರ್ವಜನಿಕವಾಗಿ ತೋರಿಸಲಾಗುವುದಿಲ್ಲ. ಇದು ವಿದ್ಯಾರ್ಥಿ ಸಮುದಾಯ ಯೋಜನೆಯಾಗಿದೆ.",
+    privacy_note:"ನಿಮ್ಮ ಸಂಪರ್ಕ ವಿವರಗಳು ಮತ್ತು ಸಮಸ್ಯೆಯ ಫೋಟೋವನ್ನು ಅಧಿಕೃತ ಸಿಬ್ಬಂದಿ ಮಾತ್ರ ನೋಡಬಹುದು. ದುರಸ್ತಿ ಮೊದಲು/ನಂತರದ ಫೋಟೋಗಳನ್ನು ಸಾರ್ವಜನಿಕ ಗ್ಯಾಲರಿಯಲ್ಲಿ ಹಂಚಿಕೊಳ್ಳಲು ಕೆಳಗೆ ಸಮ್ಮತಿ ನೀಡಬಹುದು. ಇದು ವಿದ್ಯಾರ್ಥಿ ಸಮುದಾಯ ಯೋಜನೆ; ಅಧಿಕೃತವಾಗಿ ಅಳವಡಿಸದ ಹೊರತು ಪುರಸಭೆಯ ಅಧಿಕೃತ ಸೇವೆಯಲ್ಲ.",
     demo_data_badge:"ಡೆಮೊ ಡೇಟಾ",
     primary_park:"ಮುಖ್ಯ ಉದ್ಯಾನ (ಡೀಫಾಲ್ಟ್ ನಿಯೋಜನೆ)", no_primary_park:"— ಮುಖ್ಯ ಉದ್ಯಾನ ಇಲ್ಲ —",
     hist_submitted:"ದೂರು ಸಲ್ಲಿಸಲಾಗಿದೆ", hist_assigned:"ತಂತ್ರಜ್ಞರಿಗೆ ನಿಯೋಜಿಸಲಾಗಿದೆ", hist_progress:"ತಂತ್ರಜ್ಞರು ಕೆಲಸ ಪ್ರಾರಂಭಿಸಿದರು",
@@ -977,34 +988,49 @@ const T = {
 let lang = "en";
 let isAdmin = false;
 let currentTech = null;
+let csrfToken = null;
+let complaintCache = [];
+let technicianCache = [];
+let suggestionCache = [];
+let extraParkCache = [];
+let sessionReady = null;
 
 // ---------- server sync layer ----------
-// Everything below still reads/writes the same localStorage keys as before (so every
-// render function elsewhere in this file keeps working completely unchanged), but every
-// save now also pushes the new value to the shared Flask+SQLite backend, and a pull from
-// that backend refreshes the local copy whenever a data-driven view is shown or polled.
-// This is what makes a citizen's phone and the municipality's laptop see the same data.
 let serverOnline = true;
 
-function syncPush(endpoint, value, isPlain) {
-  fetch("/api/" + endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(isPlain ? { value: value } : value)
-  }).then(() => { serverOnline = true; updateSyncIndicator(); })
-    .catch(() => { serverOnline = false; updateSyncIndicator(); });
+async function apiRequest(endpoint, method, value) {
+  if (method && sessionReady) await sessionReady;
+  const response = await fetch("/api/" + endpoint, {
+    method: method || "GET",
+    cache: "no-store",
+    headers: {
+      ...(value === undefined ? {} : { "Content-Type": "application/json" }),
+      ...(method && method !== "GET" ? { "X-CSRF-Token": csrfToken || "" } : {})
+    },
+    body: value === undefined ? undefined : JSON.stringify(value)
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || "The server could not complete the request.");
+  serverOnline = true;
+  updateSyncIndicator();
+  return result;
 }
 
-async function syncPull(endpoint, localStorageKey, isPlain) {
+async function syncPush(endpoint, value, method) {
   try {
-    const res = await fetch("/api/" + endpoint, { cache: "no-store" });
-    if (!res.ok) throw new Error("bad status");
-    const data = await res.json();
-    const value = isPlain ? data.value : data;
-    localStorage.setItem(localStorageKey, isPlain ? value : JSON.stringify(value));
-    serverOnline = true;
+    await apiRequest(endpoint, method || "POST", value);
+    return true;
+  } catch (error) {
+    serverOnline = false;
     updateSyncIndicator();
-    return value;
+    alert(error.message);
+    return false;
+  }
+}
+
+async function syncPull(endpoint) {
+  try {
+    return await apiRequest(endpoint);
   } catch (e) {
     serverOnline = false;
     updateSyncIndicator();
@@ -1015,21 +1041,33 @@ async function syncPull(endpoint, localStorageKey, isPlain) {
 function updateSyncIndicator() {
   const el = document.getElementById("syncIndicator");
   if (!el) return;
-  el.textContent = serverOnline ? "🟢 Synced" : "🔴 Offline (showing last saved data)";
+  el.textContent = serverOnline ? "🟢 Connected" : "🔴 Offline (changes may not be saved)";
   el.style.color = serverOnline ? "#2F6D4F" : "#b03a2e";
 }
 
-function loadTechnicians() { return JSON.parse(localStorage.getItem("dpw_technicians") || "[]"); }
-function saveTechnicians(list) { localStorage.setItem("dpw_technicians", JSON.stringify(list)); syncPush("technicians", list); }
-function loadComplaints() { return JSON.parse(localStorage.getItem("dpw_complaints_v2") || "[]"); }
-function saveComplaints(list) { localStorage.setItem("dpw_complaints_v2", JSON.stringify(list)); syncPush("complaints", list); }
-function loadExtraParks() { return JSON.parse(localStorage.getItem("dpw_extra_parks") || "[]"); }
-function saveExtraParks(list) { localStorage.setItem("dpw_extra_parks", JSON.stringify(list)); syncPush("extra-parks", list); }
-function getAdminPassword() { return localStorage.getItem("dpw_admin_password") || "davangere2026"; }
-function setAdminPassword(pw) { localStorage.setItem("dpw_admin_password", pw); syncPush("admin-password", pw, true); }
+function loadTechnicians() { return technicianCache; }
+function saveTechnicians(list) {
+  technicianCache = list.map(({ password, password_hash, ...tech }) => tech);
+  return syncPush("technicians", list);
+}
+function loadComplaints() { return complaintCache; }
+function saveComplaints(list) {
+  complaintCache = list;
+  return syncPush("complaints", list, isAdmin ? "PUT" : "POST");
+}
+function loadExtraParks() { return extraParkCache; }
+function saveExtraParks(list) {
+  extraParkCache = list;
+  return syncPush("extra-parks", list);
+}
+function loadSuggestions() { return suggestionCache; }
+function saveSuggestions(list) {
+  suggestionCache = list;
+  return syncPush("suggestions", list, isAdmin ? "POST" : undefined);
+}
 
 // Re-sync the PARKS array (built-in parks + any admin-added "custom-" parks) after a fresh
-// pull, without duplicating entries that were already pushed in at page load.
+// pull, without duplicating entries.
 function rehydrateExtraParks() {
   const extra = loadExtraParks();
   for (let i = PARKS.length - 1; i >= 0; i--) {
@@ -1038,17 +1076,12 @@ function rehydrateExtraParks() {
   extra.forEach(p => PARKS.push(p));
 }
 
-// Pull a set of collections from the server in the background, then run a callback to
-// re-render whatever is currently on screen with the fresh data. Used on view switches and
-// by the periodic dashboard poll below. Never blocks the UI — the view it was called for
-// has already been shown with whatever was cached locally.
 function refreshFromServer(names, after) {
   const jobs = names.map(n => {
-    if (n === "complaints") return syncPull("complaints", "dpw_complaints_v2");
-    if (n === "technicians") return syncPull("technicians", "dpw_technicians");
-    if (n === "suggestions") return syncPull("suggestions", "dpw_suggestions");
-    if (n === "extra-parks") return syncPull("extra-parks", "dpw_extra_parks");
-    if (n === "admin-password") return syncPull("admin-password", "dpw_admin_password", true);
+    if (n === "complaints") return syncPull("complaints").then(value => { if (value) complaintCache = value; });
+    if (n === "technicians") return syncPull("technicians").then(value => { if (value) technicianCache = value; });
+    if (n === "suggestions") return syncPull("suggestions").then(value => { if (value) suggestionCache = value; });
+    if (n === "extra-parks") return syncPull("extra-parks").then(value => { if (value) extraParkCache = value; });
     return Promise.resolve(null);
   });
   Promise.all(jobs).then(() => { if (typeof after === "function") after(); });
@@ -1113,11 +1146,15 @@ function showView(name) {
   document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
   if (name === "admin" && !isAdmin) name = "adminlogin";
   if (name === "tech" && !currentTech) name = "techlogin";
+  if (name === "track" && window._lastSubmittedId) {
+    document.getElementById("trackId").value = window._lastSubmittedId;
+    document.getElementById("trackPhone").value = window._lastSubmittedPhone || "";
+  }
   document.getElementById("view-" + name).classList.add("active");
   if (name === "admin") { renderAdminComplaints(); refreshAdminView(); startDashboardPolling("admin"); }
   else if (name === "tech") { renderTechDashboard(); refreshTechView(); startDashboardPolling("tech"); }
   else { stopDashboardPolling(); }
-  if (name === "gallery") { renderGallery(); refreshFromServer(["complaints"], renderGallery); }
+  if (name === "gallery") { renderGallery(); }
   if (name === "parks") { refreshFromServer(["extra-parks"], () => { rehydrateExtraParks(); renderParkGrid(); renderReportSelects(); }); }
   if (name === "suggest") {
     document.getElementById("suggestFormWrap").style.display = "block";
@@ -1195,7 +1232,22 @@ function closeMobileMenu() {
   document.getElementById("mainNav").classList.remove("open");
 }
 
-function logoutAll() { isAdmin = false; currentTech = null; updateNavForLogin(); showView("home"); }
+async function logoutAll() {
+  try {
+    const response = await apiRequest("logout", "POST", {});
+    csrfToken = response.csrf_token;
+  } catch (error) {
+    alert(error.message);
+    return;
+  }
+  isAdmin = false;
+  currentTech = null;
+  complaintCache = [];
+  technicianCache = [];
+  suggestionCache = [];
+  updateNavForLogin();
+  showView("home");
+}
 
 // ---------- park grid ----------
 function mapsUrl(park) {
@@ -1221,7 +1273,7 @@ function renderParkGrid() {
     const card = document.createElement("div");
     card.className = "park-card";
     card.innerHTML = `
-      ${PARK_IMAGES[p.slug]}
+      ${parkImageHtml(p)}
       <div class="park-card-body">
         <h3>${lang === "kn" ? p.kn : p.en}</h3>
         <p class="park-location">${lang === "kn" ? p.loc_kn : p.loc}</p>
@@ -1258,28 +1310,23 @@ function renderReportSelects() {
 const SUGGESTION_CATEGORIES = ["sug_seating","sug_play","sug_greenery","sug_lighting","sug_facilities","sug_other"];
 const SUGGESTION_STATUSES = ["new","review","planned","done"];
 
-function loadSuggestions() { return JSON.parse(localStorage.getItem("dpw_suggestions") || "[]"); }
-function saveSuggestions(list) { localStorage.setItem("dpw_suggestions", JSON.stringify(list)); syncPush("suggestions", list); }
-
 function submitSuggestion(e) {
   e.preventDefault();
   const park = PARKS.find(p => p.id == document.getElementById("s_park").value);
   if (!park) return;
-  const suggestions = loadSuggestions();
-  const newId = suggestions.length ? Math.max(...suggestions.map(s => s.id)) + 1 : 1;
-  suggestions.push({
-    id: newId,
-    park_id: park.id, park_en: park.en, park_kn: park.kn,
+  const button = e.currentTarget.querySelector('[type="submit"]');
+  button.disabled = true;
+  apiRequest("suggestions", "POST", {
+    park_id: park.id,
+    park_en: park.en,
+    park_kn: park.kn,
     category: document.getElementById("s_category").value,
-    text: document.getElementById("s_text").value,
-    citizen_name: document.getElementById("s_name").value.trim(),
-    status: "new",
-    date_submitted: new Date().toLocaleString(),
-    date_submitted_ts: Date.now()
-  });
-  saveSuggestions(suggestions);
-  document.getElementById("suggestFormWrap").style.display = "none";
-  document.getElementById("suggestSuccess").style.display = "block";
+    suggestion: document.getElementById("s_text").value
+  }).then(() => {
+    document.getElementById("suggestFormWrap").style.display = "none";
+    document.getElementById("suggestSuccess").style.display = "block";
+  }).catch(error => alert(error.message))
+    .finally(() => { button.disabled = false; });
 }
 
 function resetSuggestForm() {
@@ -1430,12 +1477,18 @@ function handlePhotoSelect(input) {
 }
 
 function resizeImageToDataURL(file, callback) {
+  if (!file.type.startsWith("image/") || file.size > 10 * 1024 * 1024) {
+    alert(lang === "kn"
+      ? "ದಯವಿಟ್ಟು 10 MB ಗಿಂತ ಚಿಕ್ಕ ಚಿತ್ರವನ್ನು ಆಯ್ಕೆಮಾಡಿ"
+      : "Choose an image smaller than 10 MB.");
+    return;
+  }
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
-      const maxW = 500;
-      const scale = Math.min(1, maxW / img.width);
+      const maxDimension = 500;
+      const scale = Math.min(1, maxDimension / img.width, maxDimension / img.height);
       const canvas = document.createElement("canvas");
       canvas.width = img.width * scale;
       canvas.height = img.height * scale;
@@ -1454,43 +1507,37 @@ function addHistory(complaint, key, extra) {
   complaint.history.push({ key, ts: Date.now(), time: new Date().toLocaleString(), extra: extra || null });
 }
 
-function submitComplaint(e) {
+async function submitComplaint(e) {
   e.preventDefault();
   const photoData = reportPhotoDataUrl;
   if (!photoData) { alert(lang === "kn" ? "ದಯವಿಟ್ಟು ಫೋಟೋ ಸೇರಿಸಿ" : "Please attach a photo before submitting."); return; }
-
-  const complaints = loadComplaints();
-  const newId = complaints.length ? Math.max(...complaints.map(c => c.id)) + 1 : 1;
   const park = PARKS.find(p => p.id == document.getElementById("f_park").value);
-  const nowTs = Date.now();
-  const complaint = {
-    id: newId,
+  if (!park) { alert(T[lang].choose_park); return; }
+  const button = e.currentTarget.querySelector('[type="submit"]');
+  button.disabled = true;
+  const citizenPhone = document.getElementById("f_contact").value.trim();
+  try {
+    const response = await apiRequest("complaints/new", "POST", {
     park_id: park ? park.id : null,
     park_en: park ? park.en : "—",
     park_kn: park ? park.kn : "—",
     citizen_name: document.getElementById("f_name").value,
-    citizen_phone: document.getElementById("f_contact").value,
+    citizen_phone: citizenPhone,
     issue_type: document.getElementById("f_issue").value,
     priority: document.getElementById("f_priority").value,
     description: document.getElementById("f_desc").value,
     photo_before: photoData,
-    photo_after: null,
-    status: "pending",
-    technician_id: null,
-    date_submitted: new Date().toLocaleString(),
-    date_submitted_ts: nowTs,
-    date_resolved: null,
-    date_resolved_ts: null,
-    reopen_count: 0,
-    repair_notes: "",
-    feedback_rating: null,
-    feedback_comment: null,
-    history: []
-  };
-  addHistory(complaint, "hist_submitted");
-  complaints.push(complaint);
-  saveComplaints(complaints);
-  document.getElementById("newComplaintId").textContent = "#" + newId;
+    photo_consent: document.getElementById("f_photo_consent").checked
+    });
+    window._lastSubmittedId = response.id;
+    window._lastSubmittedPhone = citizenPhone;
+    document.getElementById("newComplaintId").textContent = "#" + response.id;
+  } catch (error) {
+    alert(error.message);
+    return;
+  } finally {
+    button.disabled = false;
+  }
   document.getElementById("reportForm").reset();
   document.getElementById("f_photo_preview").style.display = "none";
   reportPhotoDataUrl = null;
@@ -1516,14 +1563,18 @@ function slaTagHtml(complaint) {
 }
 
 // ---------- citizen: track ----------
-function trackComplaint(e) {
+async function trackComplaint(e) {
   e.preventDefault();
-  const id = parseInt(document.getElementById("trackId").value);
+  const id = parseInt(document.getElementById("trackId").value, 10);
   const phone = document.getElementById("trackPhone").value.trim();
-  const complaints = loadComplaints();
-  const found = complaints.find(c => c.id === id && c.citizen_phone === phone);
   const box = document.getElementById("trackResult");
-  if (!found) { box.innerHTML = `<p class="not-found">${T[lang].not_found}</p>`; return; }
+  let found;
+  try {
+    found = await apiRequest("track", "POST", { id, phone });
+  } catch (error) {
+    box.innerHTML = `<p class="not-found">${error.message}</p>`;
+    return;
+  }
 
   const idx = STATUS_ORDER.indexOf(found.status);
   const timelineHtml = STATUS_ORDER.map((s,i) =>
@@ -1538,13 +1589,12 @@ function trackComplaint(e) {
     </div>`;
   }
 
-  const technicians = loadTechnicians();
-  const tech = technicians.find(t => t.id === found.technician_id);
-  const techName = tech ? tech.name : T[lang].not_yet_assigned;
+  const techName = found.technician_name || T[lang].not_yet_assigned;
 
   const historyHtml = (found.history || []).map(h => {
     let label = T[lang][h.key] || h.key;
-    return `<li>${label}${h.extra ? " — " + h.extra : ""}<span class="hist-time">${h.time}</span></li>`;
+    const timestamp = h.time || (h.ts ? new Date(h.ts).toLocaleString() : "");
+    return `<li>${label}${h.extra ? " — " + h.extra : ""}<span class="hist-time">${timestamp}</span></li>`;
   }).join("");
 
   const reopenedTag = found.reopen_count > 0 ? `<span class="reopened-tag">${T[lang].reopened_tag} ×${found.reopen_count}</span>` : "";
@@ -1590,26 +1640,35 @@ function setFeedbackStar(n) {
   });
 }
 
-function submitFeedback(complaintId) {
+async function submitFeedback(complaintId) {
   const rating = window._currentFeedbackStar || 0;
   if (!rating) { alert(lang === "kn" ? "ದಯವಿಟ್ಟು ರೇಟಿಂಗ್ ಆಯ್ಕೆಮಾಡಿ" : "Please select a star rating."); return; }
   const comment = document.getElementById("feedbackComment").value;
-  const complaints = loadComplaints();
-  const c = complaints.find(c => c.id === complaintId);
-  if (c) {
-    c.feedback_rating = rating;
-    c.feedback_comment = comment;
-    saveComplaints(complaints);
+  const phone = document.getElementById("trackPhone").value.trim();
+  try {
+    await apiRequest("feedback", "POST", { id: complaintId, phone, rating, comment });
     document.getElementById("trackId").value = complaintId;
     trackComplaint({ preventDefault: () => {} });
+  } catch (error) {
+    alert(error.message);
   }
 }
 
 // ---------- gallery ----------
-function renderGallery() {
+async function renderGallery() {
   const grid = document.getElementById("galleryGrid");
   const empty = document.getElementById("galleryEmpty");
-  const complaints = loadComplaints().filter(c => c.photo_after && !c.is_demo && (c.status === "resolved" || c.status === "verified"));
+  let complaints = [];
+  try {
+    complaints = await apiRequest("gallery");
+  } catch (error) {
+    serverOnline = false;
+    updateSyncIndicator();
+    grid.innerHTML = `<p class="hint">${error.message}</p>`;
+    empty.style.display = "none";
+    return;
+  }
+  complaints = complaints.filter(c => c.photo_after && (c.status === "resolved" || c.status === "verified"));
   if (!complaints.length) { grid.innerHTML = ""; empty.style.display = "block"; return; }
   empty.style.display = "none";
   grid.innerHTML = complaints.map(c => `
@@ -1627,7 +1686,7 @@ function renderGallery() {
 }
 
 // ---------- admin ----------
-function adminLogin(e) {
+async function adminLogin(e) {
   if (e && e.preventDefault) e.preventDefault();
   const pwField = document.getElementById("adminPw");
   const pw = pwField ? pwField.value : "";
@@ -1637,32 +1696,46 @@ function adminLogin(e) {
     errBox.style.display = "block";
     return;
   }
-  if (pw === getAdminPassword()) {
+  try {
+    const response = await apiRequest("login/admin", "POST", { password: pw });
+    csrfToken = response.csrf_token;
     isAdmin = true; currentTech = null;
     errBox.style.display = "none";
     updateNavForLogin();
     showView("admin");
-  } else {
-    errBox.textContent = T[lang].wrong_password;
+  } catch (error) {
+    errBox.textContent = error.message;
     errBox.style.display = "block";
   }
 }
 
-function updateAdminPassword() {
+async function updateAdminPassword() {
   const field = document.getElementById("newAdminPassword");
   const msg = document.getElementById("pwUpdateMsg");
   const pw = field.value.trim();
-  if (!pw) {
-    msg.textContent = lang === "kn" ? "ದಯವಿಟ್ಟು ಹೊಸ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ" : "Please enter a new password.";
+  if (pw.length < 12) {
+    msg.textContent = lang === "kn" ? "ಪಾಸ್‌ವರ್ಡ್ ಕನಿಷ್ಠ 12 ಅಕ್ಷರಗಳಿರಬೇಕು" : "Use a password with at least 12 characters.";
     msg.style.color = "var(--brick)";
     msg.style.display = "block";
     return;
   }
-  setAdminPassword(pw);
-  field.value = "";
-  msg.textContent = T[lang].password_updated_msg;
-  msg.style.color = "var(--green-dark)";
-  msg.style.display = "block";
+  try {
+    const saved = await syncPush("admin-password", { value: pw });
+    if (!saved) {
+      msg.textContent = lang === "kn" ? "ಪಾಸ್‌ವರ್ಡ್ ಅಪ್‌ಡೇಟ್ ವಿಫಲವಾಗಿದೆ" : "Password update failed.";
+      msg.style.color = "var(--brick)";
+      msg.style.display = "block";
+      return;
+    }
+    field.value = "";
+    msg.textContent = T[lang].password_updated_msg;
+    msg.style.color = "var(--green-dark)";
+    msg.style.display = "block";
+  } catch (error) {
+    msg.textContent = error.message;
+    msg.style.color = "var(--brick)";
+    msg.style.display = "block";
+  }
 }
 
 function switchAdminTab(tab) {
@@ -1982,6 +2055,10 @@ function addTechnician() {
     alert(lang === "kn" ? "ದಯವಿಟ್ಟು ಹೆಸರು, ಬಳಕೆದಾರಹೆಸರು ಮತ್ತು ಪಾಸ್‌ವರ್ಡ್ ಭರ್ತಿ ಮಾಡಿ" : "Please fill in name, username and password.");
     return;
   }
+  if (password.length < 12) {
+    alert(lang === "kn" ? "ಪಾಸ್‌ವರ್ಡ್ ಕನಿಷ್ಠ 12 ಅಕ್ಷರಗಳಿರಬೇಕು" : "Technician passwords must be at least 12 characters.");
+    return;
+  }
   const technicians = loadTechnicians();
   const newId = technicians.length ? Math.max(...technicians.map(t => t.id)) + 1 : 1;
   const parkVal = document.getElementById("newTechPark").value;
@@ -2090,7 +2167,7 @@ function exportComplaintsCSV() {
 }
 
 // ---------- technician ----------
-function techLogin(e) {
+async function techLogin(e) {
   if (e && e.preventDefault) e.preventDefault();
   const userField = document.getElementById("techUsername");
   const passField = document.getElementById("techPassword");
@@ -2102,15 +2179,15 @@ function techLogin(e) {
     errBox.style.display = "block";
     return;
   }
-  const technicians = loadTechnicians();
-  const found = technicians.find(t => t.username === username && t.password === password);
-  if (found) {
-    currentTech = found; isAdmin = false;
+  try {
+    const response = await apiRequest("login/technician", "POST", { username, password });
+    csrfToken = response.csrf_token;
+    currentTech = response.technician; isAdmin = false;
     errBox.style.display = "none";
     updateNavForLogin();
     showView("tech");
-  } else {
-    errBox.textContent = T[lang].wrong_login;
+  } catch (error) {
+    errBox.textContent = error.message;
     errBox.style.display = "block";
   }
 }
@@ -2197,41 +2274,33 @@ function submitAfterPhoto(complaintId) {
 }
 
 // ---------- init ----------
-loadExtraParks().forEach(p => PARKS.push(p));
-// Demo/sample data (the "Ravi Kumar" technician and the 3 seeded demo complaints) has been
-// retired — this removes it once for anyone who already had it saved, and never reseeds it.
-// IMPORTANT: this runs on every brand-new device BEFORE that device has pulled the real
-// shared data down from the server, so loadTechnicians()/loadComplaints() here only ever see
-// that device's own (possibly still-empty) localStorage. We only push a save back to the
-// server when filtering actually removed something — never just because the local list
-// happens to be empty — otherwise a citizen's first-ever visit on a brand-new phone would
-// push an empty list and silently wipe out every complaint every other device had already
-// submitted.
-if (!localStorage.getItem("dpw_demo_cleared_v1")) {
-  const techs = loadTechnicians();
-  const techsFiltered = techs.filter(t => t.username !== "ravi");
-  if (techsFiltered.length !== techs.length) saveTechnicians(techsFiltered);
-  const complaints = loadComplaints();
-  const complaintsFiltered = complaints.filter(c => !c.is_demo);
-  if (complaintsFiltered.length !== complaints.length) saveComplaints(complaintsFiltered);
-  localStorage.setItem("dpw_demo_cleared_v1", "true");
+for (const key of ["dpw_admin_password", "dpw_technicians", "dpw_complaints_v2", "dpw_suggestions", "dpw_extra_parks"]) {
+  localStorage.removeItem(key);
 }
 applyTranslations();
 updateNavForLogin();
 
-// Pull the shared server data once on page load (works even if this device has never seen
-// it before — a fresh browser with empty localStorage will populate from the server) and
-// re-render whatever ended up on screen. If the server can't be reached (e.g. this file was
-// opened directly instead of through the Flask app), it silently falls back to whatever is
-// cached locally, so the page still works for local testing.
-refreshFromServer(["complaints", "technicians", "suggestions", "extra-parks", "admin-password"], () => {
-  rehydrateExtraParks();
-  renderParkGrid();
-  renderReportSelects();
-  renderGallery();
-  if (isAdmin) refreshAdminView();
-  if (currentTech) refreshTechView();
-});
+async function initializeApp() {
+  try {
+    const auth = await apiRequest("session");
+    csrfToken = auth.csrf_token;
+    isAdmin = auth.role === "admin";
+    currentTech = auth.technician || null;
+    updateNavForLogin();
+    const parks = await syncPull("extra-parks");
+    if (parks) extraParkCache = parks;
+    rehydrateExtraParks();
+    renderParkGrid();
+    renderReportSelects();
+    if (isAdmin) showView("admin");
+    else if (currentTech) showView("tech");
+  } catch (error) {
+    serverOnline = false;
+    updateSyncIndicator();
+  }
+}
+
+sessionReady = initializeApp();
 </script>
 </body>
 </html>
